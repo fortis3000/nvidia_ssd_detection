@@ -1,0 +1,25 @@
+# build environment
+docker build . -t nvidia_ssd
+
+# start container
+docker run --gpus all --rm -it --ulimit memlock=-1 --ulimit stack=67108864 \
+	-v path_to_new_coco:/coco \
+	-v path_to_models:/workspace/models \
+	--ipc=host nvidia_ssd
+
+####
+# commands for python env
+#####
+
+# start learning
+python ./main.py --backbone resnet34 --data /coco --epochs 501 --batch-size 8 --eval-batch-size 8 --mode training --save \
+	--learning-rate 0.006 --weight-decay 0.01 > ./models/outputs.txt
+
+
+# continue learning
+python ./main.py --backbone resnet34 --data /coco --epochs 251 --batch-size 8 --eval-batch-size 8 --mode training --save \
+	--checkpoint /workspace/models/epoch_200.pt \
+	--learning-rate 0.001 --weight-decay 0.01
+
+# evaluate checkpoint
+python ./main.py --backbone resnet34 --mode evaluation --eval-batch-size 8 --checkpoint ./models/epoch_250.pt --data /coco
